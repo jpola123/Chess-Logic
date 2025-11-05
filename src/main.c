@@ -32,9 +32,20 @@
 
 uint16_t selected_piece;
 uint16_t old_piece;
+uint16_t chosen_piece = NULL;
 int selected_square[] = {4, 7};
 int old_coordinates[] = {4, 7};
+int chosen_coordinates[2];
 uint8_t board[8][8];
+bool move_generation = false;
+move_list * white_moves = NULL;
+move_list * black_moves = NULL;
+move_list * legal_moves = NULL;
+bool current_move = false;
+//false is white, true is black
+
+bool find_legal_move_coord(int, int);
+
 
 void draw_piece(uint16_t bitmap[], int index, int x_coord, int y_coord){
     bool draw = false;
@@ -64,104 +75,543 @@ void draw_square(uint16_t drawn_piece, int board_x, int board_y, bool selected){
             int index = k + l * 30;
             int x_coord = board_x * 30 + k;
             int y_coord = board_y * 30 + l + 40;
-            if(drawn_piece != 0){
-                if(drawn_piece == WHITE_PAWN){
-                    draw_piece(white_pawn, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == WHITE_BISHOP){
-                    draw_piece(white_bishop, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == WHITE_KING){
-                    draw_piece(white_king, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == WHITE_QUEEN){
-                    draw_piece(white_queen, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == WHITE_KNIGHT){
-                    draw_piece(white_knight, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == WHITE_ROOK){
-                    draw_piece(white_rook, index, x_coord, y_coord);
-                }
-                if(drawn_piece == BLACK_PAWN){
-                    draw_piece(black_pawn, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == BLACK_BISHOP){
-                    draw_piece(black_bishop, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == BLACK_KING){
-                    draw_piece(black_king, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == BLACK_QUEEN){
-                    draw_piece(black_queen, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == BLACK_KNIGHT){
-                    draw_piece(black_knight, index, x_coord, y_coord);
-                }
-                else if(drawn_piece == BLACK_ROOK){
-                    draw_piece(black_rook, index, x_coord, y_coord);
-                }
+            if(drawn_piece == WHITE_PAWN){
+                draw_piece(white_pawn, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_BISHOP){
+                draw_piece(white_bishop, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_KING){
+                draw_piece(white_king, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_QUEEN){
+                draw_piece(white_queen, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_KNIGHT){
+                draw_piece(white_knight, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_ROOK){
+                draw_piece(white_rook, index, x_coord, y_coord);
+            }
+            if(drawn_piece == BLACK_PAWN){
+                draw_piece(black_pawn, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_BISHOP){
+                draw_piece(black_bishop, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_KING){
+                draw_piece(black_king, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_QUEEN){
+                draw_piece(black_queen, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_KNIGHT){
+                draw_piece(black_knight, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_ROOK){
+                draw_piece(black_rook, index, x_coord, y_coord);
             }
         }
+    }
+    if(legal_moves != NULL && find_legal_move_coord(board_x, board_y)){
+        LCD_Circle(board_x * 30 + 15, board_y * 30 + 55, 5, true, GRAY);
     } 
 }
 
 void draw_board(uint8_t board[8][8]){
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
-            u16 board_color = (i + j) % 2 ? 0x9264 : 0xeed2;
-            uint16_t drawn_piece = board[i][j];
-            LCD_DrawFillRectangle(j * 30, 40 + i * 30, (j + 1) * 30, 40 + (i + 1) * 30, board_color);
-            for(int k = 0; k < 30; k++){
-                for(int l = 0; l < 30; l++){
-                    int index = k + l * 30;
-                    int x_coord = j * 30 + k;
-                    int y_coord = i * 30 + l + 40;
-                    if(drawn_piece != 0){
-                        if(drawn_piece == WHITE_PAWN){
-                            draw_piece(white_pawn, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == WHITE_BISHOP){
-                            draw_piece(white_bishop, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == WHITE_KING){
-                            draw_piece(white_king, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == WHITE_QUEEN){
-                            draw_piece(white_queen, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == WHITE_KNIGHT){
-                            draw_piece(white_knight, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == WHITE_ROOK){
-                            draw_piece(white_rook, index, x_coord, y_coord);
-                        }
-                        if(drawn_piece == BLACK_PAWN){
-                            draw_piece(black_pawn, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == BLACK_BISHOP){
-                            draw_piece(black_bishop, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == BLACK_KING){
-                            draw_piece(black_king, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == BLACK_QUEEN){
-                            draw_piece(black_queen, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == BLACK_KNIGHT){
-                            draw_piece(black_knight, index, x_coord, y_coord);
-                        }
-                        else if(drawn_piece == BLACK_ROOK){
-                            draw_piece(black_rook, index, x_coord, y_coord);
-                        }
-                    }
-                }
-            }
-                
+            draw_square(board[i][j], j, i, false);
         }
     }    
 }
 
+void draw_legal_moves(){
+    move_list ** head = &legal_moves;
+    while((*head) != NULL){
+        if(((*head)->last_move) != NULL){
+            draw_square(board[(*head)->y_coord][(*head)->x_coord], (*head)->x_coord, (*head)->y_coord, false);
+        }
+        head = &((*head)->next_move);
+    }
+}
+
+//delete the linked list
+void delete_list(int list_type){
+    move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
+    move_list * current = *head;
+    move_list * next;
+    while((current) != NULL){
+        next = current->next_move;
+        free(current);
+        current = next;
+    }
+    *head = NULL;
+}
+
+//only needed for legal move list
+void delete_move(){
+    
+}
+
+void clear_legal_moves(){
+    move_list ** head = &legal_moves;
+    move_list * current = *head;
+    move_list * next;
+    while((current) != NULL){
+        next = current->next_move;
+        free(current);
+        current = next;
+    }
+    *head = NULL;
+    draw_board(board);
+}
+bool find_legal_move(){
+    move_list ** head = &legal_moves;
+    while(*head != NULL){
+        if((*head)->x_coord == selected_square[0] && (*head)->y_coord == selected_square[1]){
+            return true;
+        }
+        head = &(*head)->next_move;
+    }
+    return false;
+}
+
+bool find_legal_move_coord(int x, int y){
+    move_list ** head = &legal_moves;
+    while((*head) != NULL){
+        if((*head)->x_coord == x && (*head)->y_coord == y){
+            return true;
+        }
+        head = &((*head)->next_move);
+    }
+    return false;
+}
+
+//add a node to the linked list of moves. List Type: 0: legal moves, 1: white_moves, 2: black_moves
+void add_move(uint16_t piece_id, uint16_t x_coord, uint16_t y_coord, uint8_t list_type){
+    move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
+    move_list ** prev = NULL;
+    while((*head) != NULL){
+        prev = head;
+        head = &(*head)->next_move;
+    }
+    (*head) = (move_list *)malloc(sizeof(move_list));
+    (*head)->last_move = (*prev);
+    (*head)->pieceId = piece_id;
+    (*head)->x_coord = x_coord;
+    (*head)->y_coord = y_coord;
+    (*head)->next_move = NULL;
+}
+
+void legal_move_generator(){
+    if(!current_move){
+        if(chosen_piece == WHITE_PAWN){
+            if(chosen_coordinates[1] == 6){
+                if(board[chosen_coordinates[1] - 2][chosen_coordinates[0]] == 0){
+                    add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - 2, 0);
+                }
+            }
+            if(chosen_coordinates[1] > 0){
+                if(board[chosen_coordinates[1] - 1][chosen_coordinates[0]] == 0){
+                    add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - 1, 0);
+                }
+                if(chosen_coordinates[0] == 0){
+                    if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 1] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] - 1, 0);
+                    }
+                }
+                else if(chosen_coordinates[0] == 7){
+                    if(board[chosen_coordinates[1]- 1][chosen_coordinates[0] - 1] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] - 1, 0);
+                    }
+                }
+                else{
+                    if(board[chosen_coordinates[1] - 1][chosen_coordinates[1] - 1] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] - 1, 0);
+                    }
+                    if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 1] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] - 1, 0);
+                    }
+                }
+            }
+        }
+        if(chosen_piece == WHITE_BISHOP || chosen_piece == WHITE_QUEEN || chosen_piece == WHITE_KING){
+            //methodology: go in one direction and then break once we hit an obstacle
+            int max_range = chosen_piece == WHITE_KING ? 2 : 8;
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8 && chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0] + i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0 && chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0] - i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8 && chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0] + i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0 && chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0] - i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+        }
+        if(chosen_piece == WHITE_KNIGHT){
+            //just hard code check these, no point in doing extra work
+            //down 1 right 2
+            if(chosen_coordinates[0] + 2 < 8 && chosen_coordinates[1] + 1 < 8){
+                if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 2] == 0 || board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 2] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] + 2, chosen_coordinates[1] + 1, 0);
+                }
+            }
+            //down 2 right 1
+            if(chosen_coordinates[0] + 1 < 8 && chosen_coordinates[1] + 2 < 8){
+                if(board[chosen_coordinates[1] + 2][chosen_coordinates[0] + 1] == 0 || board[chosen_coordinates[1] + 2][chosen_coordinates[0] + 1] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] + 2, 0);
+                }
+            }
+            //down 1 left 2
+            if(chosen_coordinates[0] - 2 >= 0 && chosen_coordinates[1] + 1 < 8){
+                if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 2] == 0 || board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 2] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] - 2, chosen_coordinates[1] + 1, 0);
+                }
+            }
+            //down 2 left 1
+            if(chosen_coordinates[0] - 1 >= 0 && chosen_coordinates[1] + 2 < 8){
+                if(board[chosen_coordinates[1] + 2][chosen_coordinates[0] - 1] == 0 || board[chosen_coordinates[1] + 2][chosen_coordinates[0] - 1] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] + 2, 0);
+                }
+            }
+            //up 1 right 2
+            if(chosen_coordinates[0] + 2 < 8 && chosen_coordinates[1] - 1 >= 0){
+                if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 2] == 0 || board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 2] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] + 2, chosen_coordinates[1] - 1, 0);
+                }
+            }
+            //up 2 right 1
+            if(chosen_coordinates[0] + 1 < 8 && chosen_coordinates[1] - 2 >= 0){
+                if(board[chosen_coordinates[1] - 2][chosen_coordinates[0] + 1] == 0 || board[chosen_coordinates[1] - 2][chosen_coordinates[0] + 1] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] - 2, 0);
+                }
+            }
+            //up 1 left 2
+            if(chosen_coordinates[0] - 2 >= 0 && chosen_coordinates[1] - 1 >= 0){
+                if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] - 2] == 0 || board[chosen_coordinates[1] - 1][chosen_coordinates[0] - 2] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] - 2, chosen_coordinates[1] - 1, 0);
+                }
+            }
+            //up 2 left 1
+            if(chosen_coordinates[0] - 1 >= 0 && chosen_coordinates[1] - 2 >= 0){
+                if(board[chosen_coordinates[1] - 2][chosen_coordinates[0] - 1] == 0 || board[chosen_coordinates[1] - 2][chosen_coordinates[0] - 1] > 6){
+                    add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] - 2, 0);
+                }
+            }
+        }
+        if(chosen_piece == WHITE_ROOK || chosen_piece == WHITE_QUEEN || chosen_piece == WHITE_KING){
+            int max_range = chosen_piece == WHITE_KING ? 2 : 8;
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8){
+                    if(board[chosen_coordinates[1]][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1], 0);
+                    }
+                    else if(board[chosen_coordinates[1]][chosen_coordinates[0] + i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1], 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0]] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0]] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0){
+                    if(board[chosen_coordinates[1]][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1], 0);
+                    }
+                    else if(board[chosen_coordinates[1]][chosen_coordinates[0] - i] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1], 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0]] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0]] > 6){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else{
+        if(chosen_piece == BLACK_PAWN){
+            if(chosen_coordinates[1] == 1){
+                if(board[chosen_coordinates[1] + 2][chosen_coordinates[0]] == 0){
+                    add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + 2, 0);
+                }
+            }
+            if(chosen_coordinates[1] < 7){
+                if(board[chosen_coordinates[1] + 1][chosen_coordinates[0]] == 0){
+                    add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + 1, 0);
+                }
+                if(chosen_coordinates[0] == 0){
+                    if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 1] < 7 && board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 1] != 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] + 1, 0);
+                    }
+                }
+                else if(chosen_coordinates[0] == 7){
+                    if(board[chosen_coordinates[1]+ 1][chosen_coordinates[0] - 1] < 7 && board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 1] != 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] + 1, 0);
+                    }
+                }
+                else{
+                    if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 1] < 7 && board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 1] != 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] + 1, 0);
+                    }
+                    if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 1] < 7 && board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 1] != 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] + 1, 0);
+                    }
+                }
+            }
+        }
+        if(chosen_piece == BLACK_BISHOP || chosen_piece == BLACK_QUEEN || chosen_piece == BLACK_KING){
+            //methodology: go in one direction and then break once we hit an obstacle
+            int max_range = chosen_piece == BLACK_KING ? 2 : 8;
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8 && chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0] + i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0 && chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0] - i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8 && chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0] + i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0 && chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0] - i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+        }
+        if(chosen_piece == BLACK_KNIGHT){
+            //just hard code check these, no point in doing extra work
+            //down 1 right 2
+            if(chosen_coordinates[0] + 2 < 8 && chosen_coordinates[1] + 1 < 8){
+                if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] + 2] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] + 2, chosen_coordinates[1] + 1, 0);
+                }
+            }
+            //down 2 right 1
+            if(chosen_coordinates[0] + 1 < 8 && chosen_coordinates[1] + 2 < 8){
+                if(board[chosen_coordinates[1] + 2][chosen_coordinates[0] + 1] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] + 2, 0);
+                }
+            }
+            //down 1 left 2
+            if(chosen_coordinates[0] - 2 >= 0 && chosen_coordinates[1] + 1 < 8){
+                if(board[chosen_coordinates[1] + 1][chosen_coordinates[0] - 2] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] - 2, chosen_coordinates[1] + 1, 0);
+                }
+            }
+            //down 2 left 1
+            if(chosen_coordinates[0] - 1 >= 0 && chosen_coordinates[1] + 2 < 8){
+                if(board[chosen_coordinates[1] + 2][chosen_coordinates[0] - 1] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] + 2, 0);
+                }
+            }
+            //up 1 right 2
+            if(chosen_coordinates[0] + 2 < 8 && chosen_coordinates[1] - 1 >= 0){
+                if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 2] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] + 2, chosen_coordinates[1] - 1, 0);
+                }
+            }
+            //up 2 right 1
+            if(chosen_coordinates[0] + 1 < 8 && chosen_coordinates[1] - 2 >= 0){
+                if(board[chosen_coordinates[1] - 2][chosen_coordinates[0] + 1] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] + 1, chosen_coordinates[1] - 2, 0);
+                }
+            }
+            //up 1 left 2
+            if(chosen_coordinates[0] - 2 >= 0 && chosen_coordinates[1] - 1 >= 0){
+                if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] - 2] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] - 2, chosen_coordinates[1] - 1, 0);
+                }
+            }
+            //up 2 left 1
+            if(chosen_coordinates[0] - 1 >= 0 && chosen_coordinates[1] - 2 >= 0){
+                if(board[chosen_coordinates[1] - 2][chosen_coordinates[0] - 1] < 7){
+                    add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] - 2, 0);
+                }
+            }
+        }
+        if(chosen_piece == BLACK_ROOK || chosen_piece == BLACK_QUEEN || chosen_piece == BLACK_KING){
+            int max_range = chosen_piece == WHITE_KING ? 2 : 8;
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] + i < 8){
+                    if(board[chosen_coordinates[1]][chosen_coordinates[0] + i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1], 0);
+                    }
+                    else if(board[chosen_coordinates[1]][chosen_coordinates[0] + i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] + i, chosen_coordinates[1], 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[1] + i < 8){
+                    if(board[chosen_coordinates[1] + i][chosen_coordinates[0]] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] + i][chosen_coordinates[0]] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] + i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[0] - i >= 0){
+                    if(board[chosen_coordinates[1]][chosen_coordinates[0] - i] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1], 0);
+                    }
+                    else if(board[chosen_coordinates[1]][chosen_coordinates[0] - i] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0] - i, chosen_coordinates[1], 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+            for(int i = 1; i < max_range; i++){
+                if(chosen_coordinates[1] - i >= 0){
+                    if(board[chosen_coordinates[1] - i][chosen_coordinates[0]] == 0){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - i, 0);
+                    }
+                    else if(board[chosen_coordinates[1] - i][chosen_coordinates[0]] < 7){
+                        add_move(chosen_piece, chosen_coordinates[0], chosen_coordinates[1] - i, 0);
+                        break;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    draw_legal_moves();
+}
 
 void init_spi_lcd() {
     gpio_set_function(PIN_CS, GPIO_FUNC_SIO);
@@ -227,6 +677,46 @@ void gpio_isr(){
     }
     else if(gpio_get_irq_event_mask(13) == 0x8){
         gpio_acknowledge_irq(13, 0x8);
+        // if move_generation is not on, then we need to select a piece to generate moves for. 
+        if((!move_generation)){
+            if(selected_piece != 0){
+                move_generation = true;
+                chosen_piece = board[selected_square[1]][selected_square[0]];
+                chosen_coordinates[0] = selected_square[0];
+                chosen_coordinates[1] = selected_square[1];
+                legal_move_generator();
+            }
+        }
+        else{
+            if(selected_square[1] != chosen_coordinates[1] || selected_square[0] != chosen_coordinates[0]){
+                //if the selected square is one of the legal moves
+                if(find_legal_move()){
+                    int list_type = current_move ? 3 : 2;
+                    move_generation = false;
+                    current_move = !current_move;
+                    board[selected_square[1]][selected_square[0]] = chosen_piece;
+                    board[chosen_coordinates[1]][chosen_coordinates[0]] = 0; 
+                    add_move(chosen_piece, selected_square[0], selected_square[1], 3);
+                    clear_legal_moves();
+
+                }
+                //generate for a different piece. 
+                else if(selected_piece != 0){
+                    clear_legal_moves();
+                    move_generation = true;
+                    chosen_piece = board[selected_square[1]][selected_square[0]];
+                    chosen_coordinates[0] = selected_square[0];
+                    chosen_coordinates[1] = selected_square[1];
+                    legal_move_generator();
+                }
+                //else, just clear the legal moves
+                else{
+                    move_generation = false;
+                    clear_legal_moves();
+                }
+                
+            }
+        }
     }
     selected_piece = board[selected_square[1]][selected_square[0]];
     draw_square(selected_piece, selected_square[0], selected_square[1], true);    
@@ -259,125 +749,6 @@ int main() {
     LCD_Setup();
     LCD_Clear(0x0000); // Clear the screen to black
 
-    #ifndef ANIMATION
-    #ifndef CHESS
-    #define N_BODIES   3      // Number of bodies in the simulation
-    #define G          12.0f  // Gravitational constant
-    #define DT         0.01f // Simulation time step
-    #define SOFTENING  5.0f   // Prevents extreme forces at close range
-
-    // Colors as per the 16-bit RGB565 specification.
-    #define BLACK      0x0000
-    #define RED        0xF800
-    #define LIME       0x07E0   // brighter green
-    #define BLUE       0x001F
-
-    // Make things easier to keep track of for each "body".
-    typedef struct {
-        float x, y, vx, vy, mass;
-        uint16_t color;
-    } Body;
-
-    // Clear everything so we start from scratch
-    LCD_Clear(BLACK);
-
-    // Initialize all bodies in a compact list
-    Body bodies[N_BODIES] = {
-        { .x=120.0f, .y=100.0f, .vx= 1.2f, .vy= 0.5f, .mass=20.0f, .color=RED  },
-        { .x=180.0f, .y=250.0f, .vx=-0.8f, .vy=-1.0f, .mass=25.0f, .color=LIME },
-        { .x= 60.0f, .y=250.0f, .vx= 0.5f, .vy= 0.9f, .mass=30.0f, .color=BLUE }
-    };
-
-    // Infinite Animation Loop
-    while(1) {
-        // Calculate accelerations and update velocities
-        for (int i = 0; i < N_BODIES; i++) {
-            float total_accel_x = 0.0f;
-            float total_accel_y = 0.0f;
-
-            for (int j = 0; j < N_BODIES; j++) {
-                if (i == j) continue;
-
-                float dx = bodies[j].x - bodies[i].x;
-                float dy = bodies[j].y - bodies[i].y;
-                // d^2 = dx^2 + dy^2 (+ a fake softening factor to avoid collisions)
-                float dist_sq = dx * dx + dy * dy + SOFTENING;
-                // Newton's law of gravitation: F = G * m1 * m2 / d^2
-                float inv_dist_cubed = 1.0f / (dist_sq * sqrtf(dist_sq));
-                
-                // Acceleration = Force / mass, but we multiply by mass to get the force directly
-                // so we can use it to update velocity directly.
-                total_accel_x += dx * inv_dist_cubed * bodies[j].mass * G;
-                total_accel_y += dy * inv_dist_cubed * bodies[j].mass * G;
-            }
-            bodies[i].vx += total_accel_x * DT;
-            bodies[i].vy += total_accel_y * DT;
-        }
-        
-        // Update positions and draw each body
-        for (int i = 0; i < N_BODIES; i++) {
-            // new position = old position + velocity * time step
-            bodies[i].x += bodies[i].vx * DT;
-            bodies[i].y += bodies[i].vy * DT;
-
-            // Wrap around screen edges
-            if (bodies[i].x < 0)    bodies[i].x += 240;
-            if (bodies[i].x >= 240) bodies[i].x -= 240;
-            if (bodies[i].y < 0)    bodies[i].y += 320;
-            if (bodies[i].y >= 320) bodies[i].y -= 320;
-
-            LCD_DrawPoint((uint16_t)bodies[i].x, (uint16_t)bodies[i].y, bodies[i].color);
-        }
-
-        // Slow it WAY down so we can see the planets interact with each other!
-        sleep_ms(1);
-    }
-    #endif
-    #endif
-    
-    /*
-        Now, for some more fun!
-
-        Uncomment the ANIMATION #define at the top of main.c 
-        to run this section.
-        
-        We've converted a popular GIF into a series of images, 
-        and stored each of those frames in its own C array.  
-        Look at the lab for the script we wrote to do this.
-
-        This is an example of how you can draw a very large picture, 
-        but notice how slow the animation is, even at 100 MHz.  
-        The LCD_DrawPicture function is not really intended for such 
-        large images, but it will be very helpful for smaller ones, 
-        like scary monsters and nice sprites in a game.
-    */ 
-
-    #ifndef CHESS
-    Picture* frame_pic = NULL;
-    int frame_index = 0;
-    while (1) { // Loop forever
-        // Get the next frame from the array
-        frame_pic = load_image(mystery_frames[frame_index]);
-    
-        if (frame_pic) {
-            // Draw the frame to the top-left corner of the screen
-            LCD_DrawPicture(0, 0, frame_pic);
-            
-            // Free the Picture struct (not the pixel data)
-            free_image(frame_pic);
-        }
-    
-        // Move to the next frame, looping back to the start
-        frame_index++;
-        if (frame_index >= mystery_frame_count) {
-            frame_index = 0;
-        }
-    
-        // Add a small delay to control animation speed
-        sleep_ms(1); // Adjust delay as needed
-    }
-    #endif
-
     #ifdef CHESS
     bool initial_draw = 1;
     
@@ -407,10 +778,8 @@ int main() {
         }
     }
     
-    
-    bool vertical_dir = false;
-    bool horizontal_dir = false;
     selected_piece = board[selected_square[1]][selected_square[0]];
+    
     while(1){
         if(initial_draw){
             initial_draw = 0;

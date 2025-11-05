@@ -416,3 +416,13 @@ const uint16_t black_king[]  = {
 #define BLACK_KNIGHT 11
 #define BLACK_ROOK 12
 
+#define MOVE_DOT 13
+
+typedef struct move{
+  uint16_t pieceId;
+  uint16_t x_coord;
+  uint16_t y_coord;
+  struct move * next_move;
+  struct move * last_move;
+} move_list;
+
