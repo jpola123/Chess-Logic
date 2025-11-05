@@ -48,6 +48,10 @@ bool left_w_rook = false;
 bool right_w_rook = false;
 bool left_b_rook = false;
 bool right_b_rook = false;
+bool right_w_castle = false;
+bool left_w_castle = false;
+bool right_b_castle = false;
+bool left_b_castle = false;
 
 //false is white, true is black
 
@@ -569,6 +573,22 @@ void legal_move_generator(){
                 }
             }
         }
+        if(chosen_piece == WHITE_KING && !white_king && !right_w_rook){
+            if(board[7][6] == 0 && board[7][5] == 0){
+                if(check_legal_move(6, 7) && check_legal_move(5, 7)){
+                    add_move(chosen_piece, 6, 7, 0);
+                    right_w_castle = true;
+                }
+            }
+        }
+        if(chosen_piece == WHITE_KING && !white_king && !left_w_rook){
+            if(board[7][3] == 0 && board[7][2] == 0 && board[7][1] == 0){
+                if(check_legal_move(3, 7) && check_legal_move(2, 7)){
+                    add_move(chosen_piece, 2, 7, 0);
+                    left_w_castle = true;
+                }
+            }
+        }
     }
     else{
         if(chosen_piece == BLACK_PAWN){
@@ -859,7 +879,7 @@ void gpio_isr(){
                     current_move = !current_move;
                     board[selected_square[1]][selected_square[0]] = chosen_piece;
                     board[chosen_coordinates[1]][chosen_coordinates[0]] = 0; 
-                    add_move(chosen_piece, selected_square[0], selected_square[1], 3);
+                    add_move(chosen_piece, selected_square[0], selected_square[1], list_type);
                     clear_legal_moves();
 
                 }
