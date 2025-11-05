@@ -42,6 +42,13 @@ move_list * white_moves = NULL;
 move_list * black_moves = NULL;
 move_list * legal_moves = NULL;
 bool current_move = false;
+bool white_king = false;
+bool black_king = false;
+bool left_w_rook = false;
+bool right_w_rook = false;
+bool left_b_rook = false;
+bool right_b_rook = false;
+
 //false is white, true is black
 
 bool find_legal_move_coord(int, int);
@@ -136,6 +143,164 @@ void draw_legal_moves(){
     }
 }
 
+bool check_legal_move(int move_x, int move_y){
+    uint8_t temp[8][8];
+    memcpy(temp, board, sizeof(temp));
+    temp[move_y][move_x] = chosen_piece;
+    temp[chosen_coordinates[1]][chosen_coordinates[0]] = 0;
+    uint8_t king_id = current_move ? 8 : 2;
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            uint8_t attacking_piece = temp[i][j];
+            if(attacking_piece != 0  && ((current_move && attacking_piece < 7)|| (!current_move && attacking_piece > 6))){
+                //simulate the moves. If the king of the opposing color is in the path of attack, return false.
+                if(attacking_piece == WHITE_PAWN){
+                    if(temp[i-1][j+1] == king_id || temp[i-1][j-1] == king_id){
+                        return false;
+                    }
+                }
+                if(attacking_piece == WHITE_BISHOP || attacking_piece == WHITE_QUEEN || attacking_piece == WHITE_KING || attacking_piece == BLACK_BISHOP || attacking_piece == BLACK_QUEEN || attacking_piece == BLACK_KING){
+                    int max_range = attacking_piece == WHITE_KING || attacking_piece == BLACK_KING ? 2 : 8;
+                    for(int k = 1; k < max_range; k++){
+                        if(k + i < 8 && k + j < 8){
+                            if(temp[k+i][k+j] == king_id){
+                                return false;
+                            }
+                            else if((temp[k+i][k+j] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(i-k >= 0 && k + j < 8){
+                            if(temp[i-k][j+k] == king_id){
+                                return false;
+                            }
+                            else if((temp[i-k][k+j] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(i+k < 8 && j - k >= 0){
+                            if(temp[i+k][j-k] == king_id){
+                                return false;
+                            }
+                            else if((temp[i+k][j-k] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(i-k >= 0 && j - k >= 0){
+                            if(temp[i-k][j-k] == king_id){
+                                return false;
+                            }
+                            else if((temp[i-k][j-k] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                }
+                if(attacking_piece == WHITE_ROOK || attacking_piece == WHITE_QUEEN || attacking_piece == WHITE_KING || attacking_piece == BLACK_ROOK || attacking_piece == BLACK_QUEEN || attacking_piece == BLACK_KING){
+                    int max_range = attacking_piece == WHITE_KING || attacking_piece == BLACK_KING ? 2 : 8;
+                    for(int k = 1; k < max_range; k++){
+                        if(k + i < 8){
+                            if(temp[k+i][j] == king_id){
+                                return false;
+                            }
+                            else if((temp[k+i][j] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(k + j < 8){
+                            if(temp[i][j+k] == king_id){
+                                return false;
+                            }
+                            else if((temp[i][j+k] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(j - k >= 0){
+                            if(temp[i][j-k] == king_id){
+                                return false;
+                            }
+                            else if((temp[i][j-k] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                    for(int k = 1; k < max_range; k++){
+                        if(i-k >= 0){
+                            if(temp[i-k][j] == king_id){
+                                return false;
+                            }
+                            else if((temp[i-k][j] != 0)){
+                                break;
+                            }
+                        } 
+                    }
+                }
+                if(attacking_piece == WHITE_KNIGHT || attacking_piece == BLACK_KNIGHT){
+                    //down 1 right 2
+                    if(j + 2 < 8 && i + 1 < 8){
+                        if(temp[i+1][j+2] == king_id){
+                            return false;
+                        }
+                    }
+                    //down 2 right 1
+                    if(j + 1 < 8 && i + 2 < 8){
+                        if(temp[i+2][j+1] == king_id){
+                            return false;
+                        }
+                    }
+                    //down 1 left 2
+                    if(j - 2 >= 0 && i + 1 < 8){
+                        if(temp[i+1][j-2] == king_id){
+                            return false;
+                        }
+                    }
+                    //down 2 left 1
+                    if(j - 1 >= 0 && i + 2 < 8){
+                        if(temp[i+2][j-1] == king_id){
+                            return false;
+                        }
+                    }
+                    //up 1 right 2
+                    if(j + 2 < 8 && i - 1 >= 0){
+                        if(temp[i-1][j+2] == king_id){
+                            return false;
+                        }
+                    }
+                    //up 2 right 1
+                    if(j + 1 < 8 && i - 2 >= 0){
+                        if(temp[i-2][j+1] == king_id){
+                            return false;
+                        }
+                    }
+                    //up 1 left 2
+                    if(j - 2 >= 0 && i - 1 >= 0){
+                        if(temp[i-1][j-2] == king_id){
+                            return false;
+                        }
+                    }
+                    //up 2 left 1
+                    if(j - 1 >= 0 && i - 2 >= 0){
+                        if(temp[i-2][j-1] == king_id){
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 //delete the linked list
 void delete_list(int list_type){
     move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
@@ -149,10 +314,6 @@ void delete_list(int list_type){
     *head = NULL;
 }
 
-//only needed for legal move list
-void delete_move(){
-    
-}
 
 void clear_legal_moves(){
     move_list ** head = &legal_moves;
@@ -190,18 +351,20 @@ bool find_legal_move_coord(int x, int y){
 
 //add a node to the linked list of moves. List Type: 0: legal moves, 1: white_moves, 2: black_moves
 void add_move(uint16_t piece_id, uint16_t x_coord, uint16_t y_coord, uint8_t list_type){
-    move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
-    move_list ** prev = NULL;
-    while((*head) != NULL){
-        prev = head;
-        head = &(*head)->next_move;
+    if(check_legal_move(x_coord, y_coord)){
+        move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
+        move_list ** prev = NULL;
+        while((*head) != NULL){
+            prev = head;
+            head = &(*head)->next_move;
+        }
+        (*head) = (move_list *)malloc(sizeof(move_list));
+        (*head)->last_move = (*prev);
+        (*head)->pieceId = piece_id;
+        (*head)->x_coord = x_coord;
+        (*head)->y_coord = y_coord;
+        (*head)->next_move = NULL;
     }
-    (*head) = (move_list *)malloc(sizeof(move_list));
-    (*head)->last_move = (*prev);
-    (*head)->pieceId = piece_id;
-    (*head)->x_coord = x_coord;
-    (*head)->y_coord = y_coord;
-    (*head)->next_move = NULL;
 }
 
 void legal_move_generator(){
