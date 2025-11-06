@@ -42,8 +42,8 @@ move_list * white_moves = NULL;
 move_list * black_moves = NULL;
 move_list * legal_moves = NULL;
 bool current_move = false;
-bool white_king = false;
-bool black_king = false;
+bool w_king = false;
+bool b_king = false;
 bool left_w_rook = false;
 bool right_w_rook = false;
 bool left_b_rook = false;
@@ -52,6 +52,9 @@ bool right_w_castle = false;
 bool left_w_castle = false;
 bool right_b_castle = false;
 bool left_b_castle = false;
+int num_of_moves = 0;
+int pieces_taken_w = 0;
+int pieces_taken_b = 0;
 
 //false is white, true is black
 
@@ -80,7 +83,57 @@ void draw_piece(uint16_t bitmap[], int index, int x_coord, int y_coord){
 
 void draw_square(uint16_t drawn_piece, int board_x, int board_y, bool selected){
     u16 board_color = selected ? RED : (board_y + board_x) % 2 ? 0x9264 : 0xeed2;
+    board_color = (board_y < 0 || board_y > 7) ? BLACK : board_color;
     LCD_DrawFillRectangle(board_x * 30, 40 + board_y * 30, (board_x + 1) * 30, 40 + (board_y + 1) * 30, board_color);
+    for(int k = 0; k < 30; k++){
+        for(int l = 0; l < 30; l++){
+            int index = k + l * 30;
+            int x_coord = board_x * 30 + k;
+            int y_coord = board_y * 30 + l + 40;
+            if(drawn_piece == WHITE_PAWN){
+                draw_piece(white_pawn, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_BISHOP){
+                draw_piece(white_bishop, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_KING){
+                draw_piece(white_king, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_QUEEN){
+                draw_piece(white_queen, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_KNIGHT){
+                draw_piece(white_knight, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == WHITE_ROOK){
+                draw_piece(white_rook, index, x_coord, y_coord);
+            }
+            if(drawn_piece == BLACK_PAWN){
+                draw_piece(black_pawn, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_BISHOP){
+                draw_piece(black_bishop, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_KING){
+                draw_piece(black_king, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_QUEEN){
+                draw_piece(black_queen, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_KNIGHT){
+                draw_piece(black_knight, index, x_coord, y_coord);
+            }
+            else if(drawn_piece == BLACK_ROOK){
+                draw_piece(black_rook, index, x_coord, y_coord);
+            }
+        }
+    }
+    if(legal_moves != NULL && find_legal_move_coord(board_x, board_y)){
+        LCD_Circle(board_x * 30 + 15, board_y * 30 + 55, 5, true, GRAY);
+    } 
+}
+
+void draw_captured(uint16_t drawn_piece, float board_x, float board_y, bool selected){
     for(int k = 0; k < 30; k++){
         for(int l = 0; l < 30; l++){
             int index = k + l * 30;
@@ -150,8 +203,8 @@ void draw_legal_moves(){
 bool check_legal_move(int move_x, int move_y){
     uint8_t temp[8][8];
     memcpy(temp, board, sizeof(temp));
-    temp[move_y][move_x] = chosen_piece;
     temp[chosen_coordinates[1]][chosen_coordinates[0]] = 0;
+    temp[move_y][move_x] = chosen_piece;
     uint8_t king_id = current_move ? 8 : 2;
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
@@ -320,6 +373,7 @@ void delete_list(int list_type){
 
 
 void clear_legal_moves(){
+    num_of_moves = 0;
     move_list ** head = &legal_moves;
     move_list * current = *head;
     move_list * next;
@@ -356,6 +410,7 @@ bool find_legal_move_coord(int x, int y){
 //add a node to the linked list of moves. List Type: 0: legal moves, 1: white_moves, 2: black_moves
 void add_move(uint16_t piece_id, uint16_t x_coord, uint16_t y_coord, uint8_t list_type){
     if(check_legal_move(x_coord, y_coord)){
+        num_of_moves++;
         move_list ** head = list_type == 0 ? &legal_moves : list_type == 1 ? &white_moves : &black_moves;
         move_list ** prev = NULL;
         while((*head) != NULL){
@@ -371,7 +426,7 @@ void add_move(uint16_t piece_id, uint16_t x_coord, uint16_t y_coord, uint8_t lis
     }
 }
 
-void legal_move_generator(){
+void legal_move_generator(bool checkmate_assessment){
     if(!current_move){
         if(chosen_piece == WHITE_PAWN){
             if(chosen_coordinates[1] == 6){
@@ -394,7 +449,7 @@ void legal_move_generator(){
                     }
                 }
                 else{
-                    if(board[chosen_coordinates[1] - 1][chosen_coordinates[1] - 1] > 6){
+                    if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] - 1] > 6){
                         add_move(chosen_piece, chosen_coordinates[0] - 1, chosen_coordinates[1] - 1, 0);
                     }
                     if(board[chosen_coordinates[1] - 1][chosen_coordinates[0] + 1] > 6){
@@ -573,21 +628,39 @@ void legal_move_generator(){
                 }
             }
         }
-        if(chosen_piece == WHITE_KING && !white_king && !right_w_rook){
+        if(chosen_piece == WHITE_KING && !w_king && !right_w_rook){
             if(board[7][6] == 0 && board[7][5] == 0){
-                if(check_legal_move(6, 7) && check_legal_move(5, 7)){
+                if(check_legal_move(6, 7) && check_legal_move(5, 7) && check_legal_move(4, 7)){
                     add_move(chosen_piece, 6, 7, 0);
                     right_w_castle = true;
                 }
+                else{
+                    right_w_castle = false;
+                }
+            }
+            else {
+                right_w_castle = false;
             }
         }
-        if(chosen_piece == WHITE_KING && !white_king && !left_w_rook){
+        else {
+            right_w_castle = false;
+        }
+        if(chosen_piece == WHITE_KING && !w_king && !left_w_rook){
             if(board[7][3] == 0 && board[7][2] == 0 && board[7][1] == 0){
-                if(check_legal_move(3, 7) && check_legal_move(2, 7)){
+                if(check_legal_move(3, 7) && check_legal_move(2, 7) && check_legal_move(4, 7)){
                     add_move(chosen_piece, 2, 7, 0);
                     left_w_castle = true;
                 }
+                else{
+                    left_w_castle = false;
+                }
             }
+            else {
+                left_w_castle = false;
+            }
+        }
+        else {
+            right_w_castle = false;
         }
     }
     else{
@@ -733,7 +806,7 @@ void legal_move_generator(){
             }
         }
         if(chosen_piece == BLACK_ROOK || chosen_piece == BLACK_QUEEN || chosen_piece == BLACK_KING){
-            int max_range = chosen_piece == WHITE_KING ? 2 : 8;
+            int max_range = chosen_piece == BLACK_KING ? 2 : 8;
             for(int i = 1; i < max_range; i++){
                 if(chosen_coordinates[0] + i < 8){
                     if(board[chosen_coordinates[1]][chosen_coordinates[0] + i] == 0){
@@ -791,9 +864,44 @@ void legal_move_generator(){
                 }
             }
         }
+        if(chosen_piece == BLACK_KING && !b_king && !right_b_rook){
+            if(board[0][6] == 0 && board[0][5] == 0){
+                if(check_legal_move(6, 0) && check_legal_move(5, 0) && check_legal_move(4, 0)){
+                    add_move(chosen_piece, 6, 0, 0);
+                    right_b_castle = true;
+                }
+                else{
+                    right_b_castle = false;
+                }
+            }
+            else {
+                right_b_castle = false;
+            }
+        }
+        else {
+            right_b_castle = false;
+        }
+        if(chosen_piece == BLACK_KING && !b_king && !left_b_rook){
+            if(board[0][3] == 0 && board[0][2] == 0 && board[0][1] == 0){
+                if(check_legal_move(3, 0) && check_legal_move(2, 0) && check_legal_move(4, 0)){
+                    add_move(chosen_piece, 2, 0, 0);
+                    left_b_castle = true;
+                }
+                else{
+                    left_b_castle = false;
+                }
+            }
+            else {
+                left_b_castle = false;
+            }
+        }
+        else {
+            right_b_castle = false;
+        }
     }
-
-    draw_legal_moves();
+    if(!checkmate_assessment){
+        draw_legal_moves();
+    }
 }
 
 void init_spi_lcd() {
@@ -814,6 +922,41 @@ void init_spi_lcd() {
     gpio_set_function(PIN_SDI, GPIO_FUNC_SPI);
     spi_init(spi0, 100 * 1000 * 1000);
     spi_set_format(spi0, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+}
+
+bool checkmate(){
+    for(int i = 0; i < 8; i++){
+        for(int j = 0; j < 8; j++){
+            chosen_piece = board[i][j];
+            chosen_coordinates[0] = j;
+            chosen_coordinates[1] = i;
+            if(chosen_piece != 0 && chosen_piece < 7 && !current_move){
+                legal_move_generator(true);
+                if(num_of_moves != 0){
+                    return false;
+                    num_of_moves = 0;
+                }
+            }
+            else if(chosen_piece > 6 && current_move){
+                legal_move_generator(true);
+                if(num_of_moves != 0){
+                    return false;
+                    num_of_moves = 0;
+                }
+            }
+            if(chosen_piece == WHITE_KING && !current_move){
+                if(check_legal_move(j, i)){
+                    return false;
+                }
+            }
+            if(chosen_piece == BLACK_KING && current_move){
+                if(check_legal_move(j, i)){
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 void gpio_isr(){
@@ -867,7 +1010,7 @@ void gpio_isr(){
                 chosen_piece = board[selected_square[1]][selected_square[0]];
                 chosen_coordinates[0] = selected_square[0];
                 chosen_coordinates[1] = selected_square[1];
-                legal_move_generator();
+                legal_move_generator(false);
             }
         }
         else{
@@ -876,12 +1019,64 @@ void gpio_isr(){
                 if(find_legal_move()){
                     int list_type = current_move ? 3 : 2;
                     move_generation = false;
-                    current_move = !current_move;
+                    if(!current_move){
+                        w_king = (chosen_piece == WHITE_KING) || w_king;
+                        right_w_rook = (chosen_piece == WHITE_ROOK && chosen_coordinates[0] == 7) || right_w_rook;
+                        left_w_rook = (chosen_piece == WHITE_ROOK && chosen_coordinates[0] == 1) || left_w_rook;
+                    }
+                    else if(current_move){
+                        b_king = (chosen_piece == BLACK_KING) || b_king;
+                        right_b_rook = (chosen_piece == BLACK_ROOK && chosen_coordinates[0] == 7) || right_b_rook;
+                        left_b_rook = (chosen_piece == BLACK_ROOK && chosen_coordinates[0] == 1) || left_b_rook;
+                    }
+                    if((right_w_castle || left_w_castle) && !current_move){
+                        if(selected_square[0] == 6){
+                            board[7][5] = WHITE_ROOK;
+                            board[7][7] = 0;
+                            right_w_castle = false;
+                        }
+                        else if(selected_square[0] == 2){
+                            board[7][3] = WHITE_ROOK;
+                            board[7][0] = 0;
+                            left_w_castle = false;
+                        }
+                    }
+                    if((right_b_castle || left_b_castle) && current_move){
+                        if(selected_square[0] == 6){
+                            board[0][5] = BLACK_ROOK;
+                            board[0][7] = 0;
+                            right_b_castle = false;
+                        }
+                        else if(selected_square[0] == 2){
+                            board[0][3] = BLACK_ROOK;
+                            board[0][0] = 0;
+                            left_b_castle = false;
+                        }                        
+                    }
+                    if(board[selected_square[1]][selected_square[0]] != 0){
+                        if(current_move){
+                            draw_captured(board[selected_square[1]][selected_square[0]], pieces_taken_b * 0.3, -1, false);
+                            pieces_taken_b++;
+                        }
+                        else{
+                            draw_captured(board[selected_square[1]][selected_square[0]], pieces_taken_w * 0.3, 8, false);
+                            pieces_taken_w++;
+                        }
+                    }
                     board[selected_square[1]][selected_square[0]] = chosen_piece;
                     board[chosen_coordinates[1]][chosen_coordinates[0]] = 0; 
+                    current_move = !current_move;
                     add_move(chosen_piece, selected_square[0], selected_square[1], list_type);
                     clear_legal_moves();
-
+                    if(checkmate()){
+                        if(current_move){
+                            LCD_DrawString(0, 0, WHITE, BLACK, "White Wins", 12, false);
+                        }
+                        else{
+                            LCD_DrawString(0, 0, WHITE, BLACK, "Black Wins", 12, false);
+                        }
+                    }
+                    delete_list(0);
                 }
                 //generate for a different piece. 
                 else if(selected_piece != 0){
@@ -890,7 +1085,7 @@ void gpio_isr(){
                     chosen_piece = board[selected_square[1]][selected_square[0]];
                     chosen_coordinates[0] = selected_square[0];
                     chosen_coordinates[1] = selected_square[1];
-                    legal_move_generator();
+                    legal_move_generator(false);
                 }
                 //else, just clear the legal moves
                 else{
@@ -902,7 +1097,7 @@ void gpio_isr(){
         }
     }
     selected_piece = board[selected_square[1]][selected_square[0]];
-    draw_square(selected_piece, selected_square[0], selected_square[1], true);    
+    draw_square(selected_piece, selected_square[0], selected_square[1], true);   
 }
 
 
@@ -918,6 +1113,8 @@ void init_gpio() {
     gpio_set_irq_enabled(13, GPIO_IRQ_EDGE_RISE, true);
     irq_set_enabled(IO_IRQ_BANK0, true);
 }
+
+
 
 Picture* load_image(const char* image_data);
 void free_image(Picture* pic);
