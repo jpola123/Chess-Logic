@@ -1061,12 +1061,12 @@ void gpio_isr(){
                     int list_type = current_move ? 3 : 2;
                     move_generation = false;
                     if(selected_square[0] == en_pass_x){
-                        if(!current_move && selected_square[1] + 1 == en_pass_y && selected_piece == WHITE_PAWN && en_passant){
+                        if(!current_move && selected_square[1] + 1 == en_pass_y && chosen_piece == WHITE_PAWN && en_passant){
                             draw_captured(board[en_pass_y][en_pass_x], pieces_taken_w * 0.3, 8, false);
                             pieces_taken_w++;
                             board[en_pass_y][en_pass_x] = 0;
                         }
-                        else if(current_move && selected_square[1] - 1 == en_pass_y && selected_piece == BLACK_PAWN && en_passant){
+                        else if(current_move && selected_square[1] - 1 == en_pass_y && chosen_piece == BLACK_PAWN && en_passant){
                             draw_captured(board[en_pass_y][en_pass_x], pieces_taken_b * 0.3, -1, false);
                             pieces_taken_b++;
                             board[en_pass_y][en_pass_x] = 0;
